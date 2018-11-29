@@ -8,7 +8,7 @@
 #define KEYSIZE 8
 #define DATASIZE 56
 
-typedef struct P*{
+typedef struct P{
 	int threadNum;
 	int size;
 	int startIndex;
@@ -42,7 +42,9 @@ int main()
 	//Final test may be a string
 	//May be read and write
 	//O_RDONLY (Read only)
-	fd = open("finaltest.txt", PROT_WRITE); 
+	//O_RDWR (May be Read and Write)
+	fd = open("finaltest.txt", O_RDONLY)); 
+
 
 	if (fd == -1)
 	{
@@ -65,10 +67,13 @@ int main()
 
 	printf("File loaded\n");
 
+	//Saves the pointer to the mapped file into an integer
+	//may not be neccisary 
+
 	for (int i = 0; i < numThreads; i++)
 	{
 		Params[i].size = sb.st_size / numThreads;
-		Params[i].startIndex = addr + (Params[i].size *i);
+		Params[i].startIndex =  + (Params[i].size *i);
 		Params[i].threadNum = i;
         if (pthread_create(&threadID[i], NULL, threadFunc, &Params[i]))
         {             
@@ -76,6 +81,29 @@ int main()
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	printf("after creation of the threads\n");
+
+	//join threads
+	for (int i = 0; i < numThreads; i++)
+	{
+		if (pthread_join(threadID[i], NULL))
+		{
+			printf("Thread join failed \n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	printf("After threads are complete:\n");
+
+	if (write(STDOUT_FILENO, addr, sb.st_size) != sb.st_size)
+	{
+		printf("Write to STDOUT FAILED \n");
+		exit(EXIT_SUCCESS);
+	}
+
+	close(fd);
+	exit(EXIT_SUCCESS);
 }
 
 void * threadFunc(void *param)
@@ -83,10 +111,12 @@ void * threadFunc(void *param)
 	printf("Starting threadFunc\n");
 	threadParam *params = (threadParam *)param;
 
+	//qsort causes segmentation fault, likely because of how it handles the data
 	qsort(params->startIndex , KEYSIZE+DATASIZE, KEYSIZE, compareFunc);
 	printf("Sort Complete\n");
 }
 
+//We need to figure out how to compare these two
 int compareFunc(const void *a, const void *b)
 {
 	return (*(long*)a - *(long*)b);
