@@ -4,14 +4,17 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/fcntl.h>
+#include <string.h>
+#include <unistd.h>
 
 #define KEYSIZE 8
-#define DATASIZE 56
+#define DATASIZE 55
 
 typedef struct P{
 	int threadNum;
 	int size;
-	int startIndex;
+	void* startIndex;
+	int recordNums;
 }threadParam;
 
 typedef struct Record {
@@ -43,7 +46,7 @@ int main()
 	//May be read and write
 	//O_RDONLY (Read only)
 	//O_RDWR (May be Read and Write)
-	fd = open("finaltest.txt", O_RDONLY)); 
+	fd = open("finaltest.txt", O_RDWR); 
 
 
 	if (fd == -1)
@@ -59,13 +62,16 @@ int main()
 	}
 	
 	addr = mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, fd, 0);
+
 	if (addr == MAP_FAILED)
 	{
 		printf("mmap failed \n");
 		exit(EXIT_FAILURE);
 	}
 
-	printf("File loaded\n");
+	int numRecords = sb.st_size / (DATASIZE + KEYSIZE);
+
+	//printf("File loaded, number of records is: %d\n",);
 
 	//Saves the pointer to the mapped file into an integer
 	//may not be neccisary 
@@ -73,8 +79,9 @@ int main()
 	for (int i = 0; i < numThreads; i++)
 	{
 		Params[i].size = sb.st_size / numThreads;
-		Params[i].startIndex =  + (Params[i].size *i);
+		Params[i].startIndex =  addr + (Params[i].size *i);
 		Params[i].threadNum = i;
+		Params[i].recordNums = numRecords/numThreads;
         if (pthread_create(&threadID[i], NULL, threadFunc, &Params[i]))
         {             
 			printf("Thread create failed \n");
@@ -112,12 +119,12 @@ void * threadFunc(void *param)
 	threadParam *params = (threadParam *)param;
 
 	//qsort causes segmentation fault, likely because of how it handles the data
-	qsort(params->startIndex , KEYSIZE+DATASIZE, KEYSIZE, compareFunc);
+	qsort(params->startIndex , params->recordNums, KEYSIZE + DATASIZE, compareFunc);
 	printf("Sort Complete\n");
 }
 
 //We need to figure out how to compare these two
 int compareFunc(const void *a, const void *b)
 {
-	return (*(long*)a - *(long*)b);
+	return (strncmp((char*)a, (char*)b, KEYSIZE));
 }
