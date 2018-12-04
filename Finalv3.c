@@ -11,7 +11,7 @@
 #define DATASIZE 55
 
 int numRecords;
-
+pthread_t *threadID;
 typedef struct P{
 	int threadNum;
 	int size;
@@ -43,9 +43,9 @@ int main()
 	//get number of threads to run off of, throw error if greater than cores
 	int numThreads = 2;
 
-	pthread_t threadID[numThreads];
+	//pthread_t threadID[numThreads];
 	threadParam Params[numThreads];
-
+	threadID = calloc(numThreads, sizeof(pthread_t));
 	//Final test may be a string
 	//May be read and write
 	//O_RDONLY (Read only)
@@ -95,15 +95,12 @@ int main()
 
 	printf("after creation of the threads\n");
 
-	//join threads
-	/*for (int i = 0; i < numThreads; i++)
+	//join thread
+	if (pthread_join(threadID[0], NULL))
 	{
-		if (pthread_join(threadID[i], NULL))
-		{
-			printf("Thread join failed \n");
-			exit(EXIT_FAILURE);
-		}
-	}*/
+		printf("Thread join failed \n");
+		exit(EXIT_FAILURE);
+	}
 
 	printf("After threads are complete:\n");
 
