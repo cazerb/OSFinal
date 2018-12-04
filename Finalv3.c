@@ -19,11 +19,6 @@ typedef struct P{
 	int recordsInGroup;
 }threadParam;
 
-/*typedef struct Record {
-	char key[KEYSIZE];
-	char data[DATASIZE];
-};*/
-
 void * threadFunc(void*);
 
 int compareFunc();
@@ -78,7 +73,6 @@ int main()
 	//printf("File loaded, number of records is: %d\n",);
 
 	//Saves the pointer to the mapped file into an integer
-	
 
 	for (int i = 0; i < numThreads; i++)
 	{
@@ -154,15 +148,16 @@ void merge(void* param, int numOfRecs)
 	int displacement = 0;
 	for (int i = 0; i < numOfRecs * 2; i++)
 	{
-		if (compareFunc(indexB, indexA) > 0 && indexB != params->startIndex+(numOfRecs*(KEYSIZE + DATASIZE)))
+		if (compareFunc(indexB, indexA) > 0 && indexA != params->startIndex+(numOfRecs*(KEYSIZE + DATASIZE)))
 		{
-			memcpy(temp+displacement, indexB, 63);
+			memcpy(temp+displacement, indexA, 63);
 			indexA += 63;
 			displacement += 63;
 		}
-		else {
-			memcpy(temp + displacement, indexA, 63);
-			indexA += 63;
+		else
+		{
+			memcpy(temp + displacement, indexB, 63);
+			indexB += 63;
 			displacement += 63;
 		}
 	}
